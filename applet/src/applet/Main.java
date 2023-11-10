@@ -77,9 +77,7 @@ public class Main extends Applet {
 
         switch (apduBuffer[ISO7816.OFFSET_INS]){
             case INS_HELLO:
-                //sendAPDU(apdu, hello);
-
-                ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
+                sendAPDU(apdu, hello);
 
                 return;
 

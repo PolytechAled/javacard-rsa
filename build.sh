@@ -12,6 +12,37 @@ function upload(){
 	gpshell get_status
 }
 
+function getkey(){
+	mkdir -p key
+	keybytes=$(echo "$1" | grep -A5 "> 10 03" | tail -n5 | sed 's/< //' | sed 's/ //g' | sed ':a;N;$!ba;s/\n//g' | tail -c+6 | head -c-23)
+	#keybytes=$(echo "$1" | grep -A4 "> 10 03" | tail -n4 | sed 's/< //' | sed 's/ //g' | sed ':a;N;$!ba;s/\n//g' | tail -c+6)
+	exponent=$(echo "$keybytes" | head -c+5)
+	pubkey=$(echo "$keybytes" | tail -c+10)
+	sed -e "s/PUBKEY/0x$pubkey/" -e "s/EXPONENT/0x$exponent/" template.asn1 > key/def.asn1
+	openssl asn1parse -genconf key/def.asn1 -out key/pubkey.der -noout
+	openssl rsa -in key/pubkey.der -inform der -pubin -out key/pubkey.pem
+	openssl rsa -pubin -inform PEM -text -noout -in key/pubkey.pem
+}
+
+function getsig(){
+	mkdir -p sig
+	echo "$1" | grep -A7 "10 04" | tail -n+6 | sed -e 's/< //' -e 's/ //g' | sed ':a;N;$!ba;s/\n//g' > sig/signature.bin
+	cat sig/signature.bin
+}
+
+function getdata(){
+	mkdir -p sig
+	echo "$1" | grep -m1 "10 03" | tail -c+7 | sed 's/ //g' | xxd -r > sig/data.bin
+}
+
+function verify(){
+	appletout="$(scriptor script.scriptor 2>/dev/null)"
+	getkey "$appletout"
+	getsig "$appletout"
+	#getdata "$appletout"
+	openssl dgst -sha256 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
+}
+
 command="hello"
 
 while [ -n "$command" ]; do
@@ -36,6 +67,9 @@ while [ -n "$command" ]; do
 			;;
 		check)
 			pcsc_scan -r
+			;;
+		verify|v)
+			verify
 			;;
 
 		*)
