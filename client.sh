@@ -1,14 +1,14 @@
 #!/bin/bash
 source javacard-env
 
-GREEN="32"
+GREEN="\e[32m"
 CYAN="\e[36m"
 MAGENTA="\e[93m"
-BOLDGREEN="\e[4;${GREEN}m"
+BOLDGREEN="\e[4;32m"
 RED="\e[31m"
 ENDCOLOR="\e[0m"
 UNDERLINED="\e[4;97m"
-PREFIX="${BOLDGREEN}Roudiner >${ENDCOLOR}"
+PREFIX="${BOLDGREEN}Brita >${ENDCOLOR}"
 
 
 function compile(){
@@ -24,11 +24,10 @@ function upload(){
 
 sendPIN ()
 {
-    echo -en "${PREFIX} Enter card PIN (tips. 2603): "
     read pin
     pin=`echo $pin | sed 's/./& /g'`
     pin=$(printf "%02d %02d %02d %02d" $pin)
-    sed "s/PIN/${pin}/" script.scriptor
+    sed "s/PIN/${pin}/" script.scriptor.tpl > script.scriptor
 }
 
 function getkey(){
@@ -45,17 +44,27 @@ function getkey(){
 function getsig(){
 	mkdir -p sig
 	echo "$1" | grep -A7 "10 04" | tail -n+6 | sed -e 's/< //' -e 's/ //g' | sed ':a;N;$!ba;s/\n//g' | xxd -r -p > sig/signature.bin
-    echo -e "${PREFIX} Size of the signature: $(ls -l sig/signature.bin | awk '{print $5}')"
+    echo -e "${PREFIX} Size of the signature: $(ls -l sig/signature.bin | awk '{print $5}')bytes"
 }
 
 function getdata(){
 	mkdir -p sig
-	echo "$1" | grep -m1 "10 03" | tail -c+7 | sed 's/ //g' | xxd -r -p > sig/data.bin
-	xxd -g1 sig/data.bin
+	echo "$1" | grep -m1 "10 04" | tail -c+16 | sed 's/ //g' | xxd -r -p > sig/data.bin
+	echo -en "${PREFIX} "
+	xxd -g1 sig/data.bin | sed 's/00000000/Message sent to be signed/'
 }
 
 function verify(){
-	appletout="$(sendPIN | scriptor 2>/dev/null)"
+	echo -en "${PREFIX} Enter card PIN (tips. 2603): "
+
+	while
+		sendPIN
+		appletout="$(scriptor script.scriptor 2>/dev/null)"
+        echo "$appletout"
+    	[[ "$appletout" == *"69 82"* ]] && echo -en "${PREFIX} ${MAGENTA}Wrong PIN! ${ENDCOLOR}Enter again: "
+	do true; done
+
+
 	getkey "$appletout"
 	getsig "$appletout"
 	getdata "$appletout"
@@ -63,7 +72,7 @@ function verify(){
     if [[ $? -ne "0" ]]; then
         echo -e "${PREFIX} ${RED}ERROR: ${ENDCOLOR}The signature is not correct."
     else
-        echo -e "${PREFIX} ${GREEN}SUCCESS: ${ENDCOLOR}The signature is OK !"
+        echo -e "${PREFIX} ${GREEN}SUCCESS: ${ENDCOLOR}The signature is OK!"
     fi
 }
 
@@ -71,7 +80,7 @@ start ()
 {
 echo -e "${CYAN}╔════════════════════════════════════╗"
 echo -e "║                                    ║"
-echo -e "║${MAGENTA}       Welcome in RoudinerCard ${CYAN}     ║"
+echo -e "║${MAGENTA}        Welcome in BritaCard ${CYAN}       ║"
 echo -e "║                                    ║"
 echo -e "╚════════════════════════════════════╝${ENDCOLOR}"
 command="hello"
@@ -81,6 +90,9 @@ help ()
 {
     echo -e "${PREFIX} How to interact with javacard:"
     echo -e "> ${UNDERLINED}check${ENDCOLOR} check if the javacard is connected."
+    echo -e "> ${UNDERLINED}compile${ENDCOLOR} compile the applet."
+    echo -e "> ${UNDERLINED}upload${ENDCOLOR} upload the applet to the card."
+    echo -e "> ${UNDERLINED}cu${ENDCOLOR} compile and upload the applet to the card."
     echo -e "> ${UNDERLINED}sendN${ENDCOLOR} function which sign the data and verify with the public key of javacard."
 }
 
@@ -105,15 +117,16 @@ while [ -n "$command" ]; do
 		check)
 			pcsc_scan -r
 			;;
-		verify|v)
+		sendN|v)
 			verify
 			;;
 
 		"")
+		    echo -n
 			;;
 
 		*)
-            		help
+            help
 			;;
 	esac
 
