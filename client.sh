@@ -1,12 +1,11 @@
 #!/bin/bash
 source javacard-env
 
-RED="31"
 GREEN="32"
 CYAN="\e[36m"
 MAGENTA="\e[93m"
-BOLDGREEN="\e[1;${GREEN}m"
-ITALICRED="\e[3;${RED}m"
+BOLDGREEN="\e[4;${GREEN}m"
+RED="\e[31m"
 ENDCOLOR="\e[0m"
 UNDERLINED="\e[4;97m"
 PREFIX="${BOLDGREEN}Roudiner >${ENDCOLOR}"
@@ -23,10 +22,18 @@ function upload(){
 	gpshell get_status
 }
 
+sendPIN ()
+{
+    echo -en "${PREFIX} Enter card PIN (tips. 2603): "
+    read pin
+    pin=`echo $pin | sed 's/./& /g'`
+    pin=$(printf "%02d %02d %02d %02d" $pin)
+    sed "s/PIN/${pin}/" script.scriptor
+}
+
 function getkey(){
 	mkdir -p key
 	keybytes=$(echo "$1" | grep -A5 "> 10 03" | tail -n5 | sed 's/< //' | sed 's/ //g' | sed ':a;N;$!ba;s/\n//g' | tail -c+6 | head -c-23)
-	#keybytes=$(echo "$1" | grep -A4 "> 10 03" | tail -n4 | sed 's/< //' | sed 's/ //g' | sed ':a;N;$!ba;s/\n//g' | tail -c+6)
 	exponent=$(echo "$keybytes" | head -c+5)
 	pubkey=$(echo "$keybytes" | tail -c+10)
 	sed -e "s/PUBKEY/0x$pubkey/" -e "s/EXPONENT/0x$exponent/" template.asn1 > key/def.asn1
@@ -38,7 +45,7 @@ function getkey(){
 function getsig(){
 	mkdir -p sig
 	echo "$1" | grep -A7 "10 04" | tail -n+6 | sed -e 's/< //' -e 's/ //g' | sed ':a;N;$!ba;s/\n//g' | xxd -r -p > sig/signature.bin
-	ls -l sig/signature.bin | awk '{print $5}'
+    echo -e "${PREFIX} Size of the signature: $(ls -l sig/signature.bin | awk '{print $5}')"
 }
 
 function getdata(){
@@ -48,11 +55,16 @@ function getdata(){
 }
 
 function verify(){
-	appletout="$(scriptor script.scriptor 2>/dev/null)"
+	appletout="$(sendPIN | scriptor 2>/dev/null)"
 	getkey "$appletout"
 	getsig "$appletout"
 	getdata "$appletout"
-	openssl dgst -sha1 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
+	openssl dgst -sha1 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin &> /dev/null
+    if [[ $? -ne "0" ]]; then
+        echo -e "${PREFIX} ${RED}ERROR: ${ENDCOLOR}The signature is not correct."
+    else
+        echo -e "${PREFIX} ${GREEN}SUCCESS: ${ENDCOLOR}The signature is OK !"
+    fi
 }
 
 start ()
@@ -61,7 +73,7 @@ echo -e "${CYAN}╔════════════════════�
 echo -e "║                                    ║"
 echo -e "║${MAGENTA}       Welcome in RoudinerCard ${CYAN}     ║"
 echo -e "║                                    ║"
-echo -e "╚════════════════════════════════════╝"
+echo -e "╚════════════════════════════════════╝${ENDCOLOR}"
 command="hello"
 }
 
@@ -96,7 +108,7 @@ while [ -n "$command" ]; do
 		verify|v)
 			verify
 			;;
-		
+
 		"")
 			;;
 
