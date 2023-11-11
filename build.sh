@@ -1,5 +1,16 @@
 #!/bin/bash
-source javacard-env
+#source javacard-env
+
+RED="31"
+GREEN="32"
+CYAN="\e[36m"
+MAGENTA="\e[93m"
+BOLDGREEN="\e[1;${GREEN}m"
+ITALICRED="\e[3;${RED}m"
+ENDCOLOR="\e[0m"
+UNDERLINED="\e[4;97m"
+PREFIX="${BOLDGREEN}Roudiner >${ENDCOLOR}"
+
 
 function compile(){
 	javac -source 1.2 -target 1.1 -g -cp "$JC_HOME_TOOLS/bin/api.jar" applet/src/applet/Main.java
@@ -42,17 +53,34 @@ function verify(){
 	#getdata "$appletout"
 	openssl dgst -sha256 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
 }
-
+start ()
+{
+echo -e "${CYAN}╔════════════════════════════════════╗"
+echo -e "║                                    ║"
+echo -e "║${MAGENTA}       Welcome in RoudinerCard ${CYAN}     ║"
+echo -e "║                                    ║"
+echo -e "╚════════════════════════════════════╝"
 command="hello"
+}
+
+help ()
+{
+    echo -e "${PREFIX} How to interact with javacard:"
+    echo -e "> ${UNDERLINED}check${ENDCOLOR} check if the javacard is connected."
+    echo -e "> ${UNDERLINED}sendN${ENDCOLOR} function which sign the data and verify with the public key of javacard."
+}
+
+start
 
 while [ -n "$command" ]; do
-	read -p "Enter a command: " command
-	
+    echo -en "${PREFIX} Enter a command: "
+	read  command
+
 	case "$command" in
 		compile)
 			compile
 			;;
-			
+
 		ctest)
 			javac -source 1.2 -target 1.1 -g -cp "$JC_HOME_TOOLS/bin/api.jar" applet/src/applet/Test.java
 			java -classpath "/home/kali/oracle_javacard_sdks/jc211_kit/bin/converter.jar:/home/kali/oracle_javacard_sdks/jc211_kit/javacard-rsa/applet/src/" com.sun.javacard.converter.Converter -verbose -exportpath "$JC_HOME_TOOLS/api_export_files:Main" -classdir applet/src -applet 0xa0:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1:0x2 applet.Test applet 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
@@ -73,7 +101,7 @@ while [ -n "$command" ]; do
 			;;
 
 		*)
-			echo "Try again"
+            help
 			;;
 	esac
 
