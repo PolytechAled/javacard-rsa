@@ -54,6 +54,7 @@ function verify(){
 	getdata "$appletout"
 	openssl dgst -sha1 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
 }
+
 start ()
 {
 echo -e "${CYAN}╔════════════════════════════════════╗"
@@ -82,11 +83,6 @@ while [ -n "$command" ]; do
 			compile
 			;;
 
-		ctest)
-			javac -source 1.2 -target 1.1 -g -cp "$JC_HOME_TOOLS/bin/api.jar" applet/src/applet/Test.java
-			java -classpath "/home/kali/oracle_javacard_sdks/jc211_kit/bin/converter.jar:/home/kali/oracle_javacard_sdks/jc211_kit/javacard-rsa/applet/src/" com.sun.javacard.converter.Converter -verbose -exportpath "$JC_HOME_TOOLS/api_export_files:Main" -classdir applet/src -applet 0xa0:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1:0x2 applet.Test applet 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
-			;;
-
 		upload)
 			upload
 			;;
@@ -100,9 +96,12 @@ while [ -n "$command" ]; do
 		verify|v)
 			verify
 			;;
+		
+		"")
+			;;
 
 		*)
-            help
+            		help
 			;;
 	esac
 
