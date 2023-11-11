@@ -1,5 +1,5 @@
 #!/bin/bash
-#source javacard-env
+source javacard-env
 
 RED="31"
 GREEN="32"
@@ -37,21 +37,22 @@ function getkey(){
 
 function getsig(){
 	mkdir -p sig
-	echo "$1" | grep -A7 "10 04" | tail -n+6 | sed -e 's/< //' -e 's/ //g' | sed ':a;N;$!ba;s/\n//g' > sig/signature.bin
-	cat sig/signature.bin
+	echo "$1" | grep -A7 "10 04" | tail -n+6 | sed -e 's/< //' -e 's/ //g' | sed ':a;N;$!ba;s/\n//g' | xxd -r -p > sig/signature.bin
+	ls -l sig/signature.bin | awk '{print $5}'
 }
 
 function getdata(){
 	mkdir -p sig
-	echo "$1" | grep -m1 "10 03" | tail -c+7 | sed 's/ //g' | xxd -r > sig/data.bin
+	echo "$1" | grep -m1 "10 03" | tail -c+7 | sed 's/ //g' | xxd -r -p > sig/data.bin
+	xxd -g1 sig/data.bin
 }
 
 function verify(){
 	appletout="$(scriptor script.scriptor 2>/dev/null)"
 	getkey "$appletout"
 	getsig "$appletout"
-	#getdata "$appletout"
-	openssl dgst -sha256 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
+	getdata "$appletout"
+	openssl dgst -sha1 -verify key/pubkey.pem -signature sig/signature.bin sig/data.bin
 }
 start ()
 {
