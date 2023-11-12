@@ -106,16 +106,6 @@ public class Main extends Applet {
                     return;
                 }
 
-//                byte[] publicKeyBuffer = new byte[(4 + 3 + 64)];
-//                short offset = ISO7816.OFFSET_CDATA;
-//                short exponentLength = Main.publicKey.getExponent(publicKeyBuffer, (short) (offset + 2));
-//                Util.setShort(publicKeyBuffer, offset, exponentLength);
-//                short modulusLength = Main.publicKey.getModulus(publicKeyBuffer, (short) (offset + 4 + exponentLength));
-//                Util.setShort(publicKeyBuffer, (short) (offset + 2 + exponentLength), modulusLength);
-//
-//                sendAPDU(apdu, new byte[]{(byte)((modulusLength >> 8) & 0xff), (byte)(modulusLength & 0xff)});
-//                sendAPDU(apdu, publicKeyBuffer);
-
                 byte[] buffer = apdu.getBuffer();
                 short offset = ISO7816.OFFSET_CDATA;
                 short expLen = publicKey.getExponent(buffer, (short) (offset + 2));
