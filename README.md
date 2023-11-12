@@ -1,6 +1,7 @@
 # BritaCard
 ## Architecture
-### Fonction helloworld debug
+### Fonction helloworld 
+Dans un premier temps, pour écrire notre première instruction, nous nous sommes basés sur la commande HelloWord du premier TP. Cela nous a permit, au départ, de tester l'envoie et la réception d'APDU via scriptor.
 ### PIN
 ### RSA encryption
 ### Instruction
