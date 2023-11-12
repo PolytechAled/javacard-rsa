@@ -88,12 +88,12 @@ command="hello"
 
 help ()
 {
-    echo -e "${PREFIX} How to interact with javacard:"
-    echo -e "> ${UNDERLINED}check${ENDCOLOR} check if the javacard is connected."
+    echo -e "${PREFIX} How to interact with the JavaCard:"
+    echo -e "> ${UNDERLINED}check${ENDCOLOR} check if the JavaCard is connected."
     echo -e "> ${UNDERLINED}compile${ENDCOLOR} compile the applet."
     echo -e "> ${UNDERLINED}upload${ENDCOLOR} upload the applet to the card."
     echo -e "> ${UNDERLINED}cu${ENDCOLOR} compile and upload the applet to the card."
-    echo -e "> ${UNDERLINED}sendN${ENDCOLOR} function which sign the data and verify with the public key of javacard."
+    echo -e "> ${UNDERLINED}sendN${ENDCOLOR} function which asks the applet to sign some data and verifies it with the public key of the JavaCard."
 }
 
 start
